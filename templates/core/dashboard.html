@@ -74,6 +74,17 @@
 
     <div class="card">
         <h2 class="section-title">Upcoming Member Dues</h2>
+        <form method="get" style="margin-bottom: 12px;">
+            <div class="grid" style="grid-template-columns: minmax(0, 1fr) auto; gap: 8px;">
+                <input
+                    type="text"
+                    name="due_search"
+                    value="{{ due_search }}"
+                    placeholder="Search member name"
+                >
+                <button type="submit">Search</button>
+            </div>
+        </form>
         <div class="table-wrap responsive-stack">
         <table class="responsive-table">
             <thead>
@@ -95,7 +106,7 @@
                     <td data-label="Total due"><strong>${{ member.total_upcoming_due }}</strong></td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="5">No members found.</td></tr>
+                <tr><td colspan="5">No matching members found.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

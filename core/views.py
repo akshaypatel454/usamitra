@@ -58,6 +58,22 @@ def member_with_totals_queryset():
     ).values("loan__member").annotate(
         total=Coalesce(Sum("amount_paid"), Value(Decimal("0.00")))
     ).values("total")[:1]
+    savings_payment_counts = MonthlyContribution.objects.filter(
+        member=OuterRef("pk"),
+        amount_paid__gt=0,
+    ).values("member").annotate(total=Count("id")).values("total")[:1]
+    installment_payment_counts = Installment.objects.filter(
+        loan__member=OuterRef("pk"),
+        amount_paid__gt=0,
+    ).values("loan__member").annotate(total=Count("id")).values("total")[:1]
+    latest_saving_paid_on = MonthlyContribution.objects.filter(
+        member=OuterRef("pk"),
+        amount_paid__gt=0,
+    ).order_by("-paid_on").values("paid_on")[:1]
+    latest_installment_paid_on = Installment.objects.filter(
+        loan__member=OuterRef("pk"),
+        amount_paid__gt=0,
+    ).order_by("-paid_on").values("paid_on")[:1]
 
     return Member.objects.annotate(
         total_contributed=Coalesce(Subquery(contribution_totals), Value(Decimal("0.00"))),
@@ -65,6 +81,10 @@ def member_with_totals_queryset():
         total_interest_collected=Coalesce(Subquery(interest_totals), Value(Decimal("0.00"))),
         total_cash_received=Coalesce(Subquery(cash_received_totals), Value(Decimal("0.00"))),
         total_installment_paid=Coalesce(Subquery(installment_totals), Value(Decimal("0.00"))),
+        savings_payment_count=Coalesce(Subquery(savings_payment_counts), Value(0)),
+        loan_payment_count=Coalesce(Subquery(installment_payment_counts), Value(0)),
+        latest_saving_paid_on=Subquery(latest_saving_paid_on),
+        latest_installment_paid_on=Subquery(latest_installment_paid_on),
     )
 
 
@@ -213,6 +233,9 @@ def dashboard(request):
             Value(Decimal("0.00")),
         )
     ).order_by("full_name")
+    due_search = request.GET.get("due_search", "").strip()
+    if due_search:
+        member_upcoming_dues = member_upcoming_dues.filter(full_name__icontains=due_search)
     next_month_savings_total = sum((member.savings_due for member in member_upcoming_dues), Decimal("0.00"))
     next_month_total_cash = available_cash_now + next_month_savings_total + next_month_installment_total
 
@@ -256,6 +279,7 @@ def dashboard(request):
             ~Q(status=Installment.Status.PAID)
         ).order_by("due_date")[:8],
         "member_upcoming_dues": member_upcoming_dues,
+        "due_search": due_search,
         "member_payment_status": Member.objects.annotate(
             paid_count=Count(
                 "contributions",
@@ -454,12 +478,9 @@ def payment_create(request):
             "payment_targets": payment_targets,
             "upcoming_total": upcoming_total,
             "show_allocation": show_allocation,
-            "recent_contributions": MonthlyContribution.objects.select_related("member")
-            .filter(amount_paid__gt=0)
-            .order_by("-paid_on", "-id")[:10],
-            "recent_installments": Installment.objects.select_related("loan", "loan__member")
-            .filter(amount_paid__gt=0)
-            .order_by("-paid_on", "-id")[:10],
+            "payment_member_summaries": member_with_totals_queryset().filter(
+                Q(savings_payment_count__gt=0) | Q(loan_payment_count__gt=0)
+            ).order_by("full_name"),
             "page_title": "Record Payment",
             "submit_label": "Save Payment",
         },

@@ -65,64 +65,36 @@
     </div>
 </div>
 
-<div class="grid two" style="margin-top: 18px;">
-    <div class="card">
-        <h2 class="section-title">Recent Savings Payments</h2>
-        <div class="table-wrap responsive-stack">
-            <table class="responsive-table">
-                <thead>
-                    <tr>
-                        <th>Member</th>
-                        <th>Month</th>
-                        <th>Paid</th>
-                        <th>Date</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for contribution in recent_contributions %}
-                    <tr>
-                        <td data-label="Member">{{ contribution.member.full_name }}</td>
-                        <td data-label="Month">{{ contribution.month|date:"M Y" }}</td>
-                        <td data-label="Paid">${{ contribution.amount_paid }}</td>
-                        <td data-label="Date">{{ contribution.paid_on|default:"-" }}</td>
-                        <td data-label="Actions"><a href="/contributions/{{ contribution.id }}/edit/">Edit</a> | <a href="/contributions/{{ contribution.id }}/delete/">Delete</a></td>
-                    </tr>
-                    {% empty %}
-                    <tr><td colspan="5">No saved contribution payments yet.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-    <div class="card">
-        <h2 class="section-title">Recent Loan Payments</h2>
-        <div class="table-wrap responsive-stack">
-            <table class="responsive-table">
-                <thead>
-                    <tr>
-                        <th>Member</th>
-                        <th>Due</th>
-                        <th>Installment</th>
-                        <th>Paid</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for installment in recent_installments %}
-                    <tr>
-                        <td data-label="Member">{{ installment.loan.member.full_name }}</td>
-                        <td data-label="Due">{{ installment.due_date }}</td>
-                        <td data-label="Installment">#{{ installment.installment_number }}</td>
-                        <td data-label="Paid">${{ installment.amount_paid }}</td>
-                        <td data-label="Actions"><a href="/installments/{{ installment.id }}/edit/">Edit</a> | <a href="/installments/{{ installment.id }}/delete/">Delete</a></td>
-                    </tr>
-                    {% empty %}
-                    <tr><td colspan="5">No saved installment payments yet.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+<div class="card" style="margin-top: 18px;">
+    <h2 class="section-title">Member Payment History</h2>
+    <p>Open a member to check all savings and loan payments, and edit or delete any mistake there.</p>
+    <div class="table-wrap responsive-stack">
+        <table class="responsive-table">
+            <thead>
+                <tr>
+                    <th>Member</th>
+                    <th>Savings Payments</th>
+                    <th>Loan Payments</th>
+                    <th>Latest Saving</th>
+                    <th>Latest Loan Payment</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for member in payment_member_summaries %}
+                <tr>
+                    <td data-label="Member">{{ member.full_name }}</td>
+                    <td data-label="Savings payments">{{ member.savings_payment_count }}</td>
+                    <td data-label="Loan payments">{{ member.loan_payment_count }}</td>
+                    <td data-label="Latest saving">{{ member.latest_saving_paid_on|default:"-" }}</td>
+                    <td data-label="Latest loan payment">{{ member.latest_installment_paid_on|default:"-" }}</td>
+                    <td data-label="Action"><a href="/members/{{ member.id }}/">View Details</a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6">No saved payments yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}
