@@ -37,6 +37,7 @@
         <h2 class="section-title">How It Works</h2>
         <p>If the payment matches the full upcoming total, the app saves the saving and all next-month loan installments automatically.</p>
         <p>If the payment is less than the full total, the app asks whether that payment is for saving or a specific loan installment.</p>
+        <p>If you record a payment by mistake, use the recent payment lists below to edit or delete it.</p>
         {% if payment_targets %}
         <h2 class="section-title" style="margin-top: 18px;">Upcoming Due</h2>
         <p><strong>Total:</strong> ${{ upcoming_total }}</p>
@@ -61,6 +62,67 @@
             </table>
         </div>
         {% endif %}
+    </div>
+</div>
+
+<div class="grid two" style="margin-top: 18px;">
+    <div class="card">
+        <h2 class="section-title">Recent Savings Payments</h2>
+        <div class="table-wrap responsive-stack">
+            <table class="responsive-table">
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Month</th>
+                        <th>Paid</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contribution in recent_contributions %}
+                    <tr>
+                        <td data-label="Member">{{ contribution.member.full_name }}</td>
+                        <td data-label="Month">{{ contribution.month|date:"M Y" }}</td>
+                        <td data-label="Paid">${{ contribution.amount_paid }}</td>
+                        <td data-label="Date">{{ contribution.paid_on|default:"-" }}</td>
+                        <td data-label="Actions"><a href="/contributions/{{ contribution.id }}/edit/">Edit</a> | <a href="/contributions/{{ contribution.id }}/delete/">Delete</a></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5">No saved contribution payments yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card">
+        <h2 class="section-title">Recent Loan Payments</h2>
+        <div class="table-wrap responsive-stack">
+            <table class="responsive-table">
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Due</th>
+                        <th>Installment</th>
+                        <th>Paid</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for installment in recent_installments %}
+                    <tr>
+                        <td data-label="Member">{{ installment.loan.member.full_name }}</td>
+                        <td data-label="Due">{{ installment.due_date }}</td>
+                        <td data-label="Installment">#{{ installment.installment_number }}</td>
+                        <td data-label="Paid">${{ installment.amount_paid }}</td>
+                        <td data-label="Actions"><a href="/installments/{{ installment.id }}/edit/">Edit</a> | <a href="/installments/{{ installment.id }}/delete/">Delete</a></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5">No saved installment payments yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endblock %}

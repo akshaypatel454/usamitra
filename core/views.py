@@ -454,6 +454,12 @@ def payment_create(request):
             "payment_targets": payment_targets,
             "upcoming_total": upcoming_total,
             "show_allocation": show_allocation,
+            "recent_contributions": MonthlyContribution.objects.select_related("member")
+            .filter(amount_paid__gt=0)
+            .order_by("-paid_on", "-id")[:10],
+            "recent_installments": Installment.objects.select_related("loan", "loan__member")
+            .filter(amount_paid__gt=0)
+            .order_by("-paid_on", "-id")[:10],
             "page_title": "Record Payment",
             "submit_label": "Save Payment",
         },
