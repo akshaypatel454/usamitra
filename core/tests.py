@@ -688,3 +688,11 @@ class HistoricalSnapshotTests(TestCase):
         self.assertEqual(akshay.next_month_installment_total, Decimal("6000.00"))
         self.assertEqual(akshay.savings_due, Decimal("1000.00"))
         self.assertEqual(akshay.total_upcoming_due, Decimal("7000.00"))
+
+    def test_snapshot_loader_sets_available_cash_to_3298(self):
+        call_command("load_april_2026_snapshot")
+
+        response = self.client.get("/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["available_cash_now"], Decimal("3298.00"))

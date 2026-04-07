@@ -10,6 +10,7 @@ from core.models import FundAdjustment, Installment, Loan, Member, MemberInteres
 
 SNAPSHOT_DATE = date(2026, 4, 1)
 LAST_MONTH_DATE = date(2026, 3, 1)
+SNAPSHOT_AVAILABLE_CASH = Decimal("3298.00")
 HISTORICAL_TAG = "[APR2026-HISTORICAL]"
 MEMBER_ALIASES = {
     "PARH": "PARTH",
@@ -494,11 +495,22 @@ class Command(BaseCommand):
         interest_total = Loan.objects.aggregate(total_sum=Sum("interest_amount"))["total_sum"] or Decimal("0.00")
         interest_paid_out_total = MemberInterestPayout.objects.aggregate(total_sum=Sum("amount"))["total_sum"] or Decimal("0.00")
         net_disbursed_total = Loan.objects.aggregate(total_sum=Sum("net_disbursed_amount"))["total_sum"] or Decimal("0.00")
-        balance_to_zero = -(contribution_total + installment_total + interest_total - net_disbursed_total - interest_paid_out_total)
-        FundAdjustment.objects.update_or_create(
+        current_balance = (
+            contribution_total
+            + installment_total
+            + interest_total
+            - net_disbursed_total
+            - interest_paid_out_total
+        )
+        balance_to_zero = SNAPSHOT_AVAILABLE_CASH - current_balance
+        FundAdjustment.objects.filter(
             adjustment_date=SNAPSHOT_DATE,
-            notes=f"{HISTORICAL_TAG} Balance snapshot cash to zero as of 2026-04-01.",
-            defaults={"amount": balance_to_zero},
+            notes__startswith=HISTORICAL_TAG,
+        ).delete()
+        FundAdjustment.objects.create(
+            adjustment_date=SNAPSHOT_DATE,
+            amount=balance_to_zero,
+            notes=f"{HISTORICAL_TAG} Balance snapshot cash to {SNAPSHOT_AVAILABLE_CASH} as of 2026-04-01.",
         )
 
         self.stdout.write(
