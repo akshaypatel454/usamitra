@@ -402,7 +402,7 @@ class Command(BaseCommand):
         if len(members) != 18:
             raise RuntimeError("Expected the 18 seeded members before loading the historical snapshot.")
 
-        contribution_months = [add_months(date(2023, 5, 1), offset) for offset in range(35)]
+        contribution_months = [add_months(SNAPSHOT_DATE, offset - 34) for offset in range(35)]
         contribution_count = 0
         for member in members.values():
             member.joined_on = date(2023, 5, 1)

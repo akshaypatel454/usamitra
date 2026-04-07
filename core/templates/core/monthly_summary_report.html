@@ -3,8 +3,8 @@
 {% block content %}
 <h1 class="page-title">Monthly Summary</h1>
 <div class="card">
-    <div class="table-wrap">
-    <table>
+    <div class="table-wrap responsive-stack">
+    <table class="responsive-table">
         <thead>
             <tr>
                 <th>Month</th>
@@ -21,15 +21,15 @@
         <tbody>
             {% for row in rows %}
             <tr>
-                <td>{{ row.label }}</td>
-                <td>${{ row.contributions_received }}</td>
-                <td>${{ row.installments_received }}</td>
-                <td>${{ row.interest_collected }}</td>
-                <td>${{ row.total_cash_in }}</td>
-                <td>${{ row.loans_issued_principal }}</td>
-                <td>${{ row.cash_given }}</td>
-                <td>${{ row.net_change }}</td>
-                <td><strong>${{ row.ending_cash }}</strong></td>
+                <td data-label="Month">{{ row.label }}</td>
+                <td data-label="Contributions">${{ row.contributions_received }}</td>
+                <td data-label="Installments">${{ row.installments_received }}</td>
+                <td data-label="Interest">${{ row.interest_collected }}</td>
+                <td data-label="Total cash in">${{ row.total_cash_in }}</td>
+                <td data-label="Loan principal">${{ row.loans_issued_principal }}</td>
+                <td data-label="Cash given">${{ row.cash_given }}</td>
+                <td data-label="Net change">${{ row.net_change }}</td>
+                <td data-label="Ending cash"><strong>${{ row.ending_cash }}</strong></td>
             </tr>
             {% empty %}
             <tr><td colspan="9">No monthly activity yet.</td></tr>

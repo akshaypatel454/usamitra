@@ -12,8 +12,8 @@
         <div class="value ok">${{ available_cash_now }}</div>
     </div>
     <a class="card-link" href="/reports/cash-given-out/"><div class="card">
-        <div class="label">Cash Given Out</div>
-        <div class="value">${{ total_cash_disbursed }}</div>
+        <div class="label">This Month Cash Given Out</div>
+        <div class="value">${{ this_month_cash_disbursed }}</div>
     </div></a>
     <div class="card">
         <div class="label">Total Cash</div>
@@ -39,41 +39,33 @@
 
 <div class="grid two">
     <div class="card">
-        <h2>Cash Summary</h2>
-        <div class="table-wrap">
-        <table>
+        <h2 class="section-title">Cash Summary</h2>
+        <div class="table-wrap responsive-stack">
+        <table class="responsive-table">
             <tbody>
                 <tr>
-                    <th>Available cash now</th>
-                    <td><strong>${{ available_cash_now }}</strong></td>
+                    <td data-label="Available cash now"><strong>${{ available_cash_now }}</strong></td>
                 </tr>
                 <tr>
-                    <th>This month savings</th>
-                    <td>${{ contribution_paid_this_month }}</td>
+                    <td data-label="This month savings">${{ contribution_paid_this_month }}</td>
                 </tr>
                 <tr>
-                    <th>This month installments</th>
-                    <td>${{ installment_paid_this_month }}</td>
+                    <td data-label="This month installments">${{ installment_paid_this_month }}</td>
                 </tr>
                 <tr>
-                    <th>Next month installments</th>
-                    <td>${{ next_month_installment_total }}</td>
+                    <td data-label="Next month installments">${{ next_month_installment_total }}</td>
                 </tr>
                 <tr>
-                    <th>Next month savings</th>
-                    <td>${{ monthly_due_total }}</td>
+                    <td data-label="Next month savings">${{ next_month_savings_total }}</td>
                 </tr>
                 <tr>
-                    <th>This month loans given</th>
-                    <td>${{ cash_given_this_month }}</td>
+                    <td data-label="This month loans given">${{ cash_given_this_month }}</td>
                 </tr>
                 <tr>
-                    <th>Total interest given out</th>
-                    <td>${{ interest_paid_out_total }}</td>
+                    <td data-label="Total interest given out">${{ interest_paid_out_total }}</td>
                 </tr>
                 <tr>
-                    <th>Next month total cash</th>
-                    <td><strong>${{ next_month_total_cash }}</strong></td>
+                    <td data-label="Next month total cash"><strong>${{ next_month_total_cash }}</strong></td>
                 </tr>
             </tbody>
         </table>
@@ -81,9 +73,9 @@
     </div>
 
     <div class="card">
-        <h2>Upcoming Member Dues</h2>
-        <div class="table-wrap">
-        <table>
+        <h2 class="section-title">Upcoming Member Dues</h2>
+        <div class="table-wrap responsive-stack">
+        <table class="responsive-table">
             <thead>
                 <tr>
                     <th>Member</th>
@@ -96,11 +88,11 @@
             <tbody>
                 {% for member in member_upcoming_dues %}
                 <tr>
-                    <td><span class="{% if member.id in overdue_member_ids %}member-overdue{% endif %}">{{ member.full_name }}</span></td>
-                    <td>${{ member.next_month_installment_total }}</td>
-                    <td>{{ next_month|date:"M Y" }}</td>
-                    <td>$1000.00</td>
-                    <td><strong>${{ member.total_upcoming_due }}</strong></td>
+                    <td data-label="Member"><span class="{% if member.id in overdue_member_ids %}member-overdue{% endif %}">{{ member.full_name }}</span></td>
+                    <td data-label="Loan installments">${{ member.next_month_installment_total }}</td>
+                    <td data-label="Month">{{ next_month|date:"M Y" }}</td>
+                    <td data-label="Saving">${{ member.savings_due }}</td>
+                    <td data-label="Total due"><strong>${{ member.total_upcoming_due }}</strong></td>
                 </tr>
                 {% empty %}
                 <tr><td colspan="5">No members found.</td></tr>

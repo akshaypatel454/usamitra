@@ -3,8 +3,8 @@
 {% block content %}
 <h1 class="page-title">Member Report</h1>
 <div class="card">
-    <div class="table-wrap">
-    <table>
+    <div class="table-wrap responsive-stack">
+    <table class="responsive-table">
         <thead>
             <tr>
                 <th>Member</th>
@@ -20,14 +20,14 @@
         <tbody>
             {% for member in members %}
             <tr>
-                <td><a class="{% if member.id in overdue_member_ids %}member-overdue{% endif %}" href="/members/{{ member.id }}/">{{ member.full_name }}</a></td>
-                <td>${{ member.monthly_contribution_amount }}</td>
-                <td>${{ member.total_contributed|default:"0" }}</td>
-                <td>${{ member.total_principal_loaned|default:"0" }}</td>
-                <td>${{ member.total_interest_collected|default:"0" }}</td>
-                <td>${{ member.total_cash_received|default:"0" }}</td>
-                <td>${{ member.total_installment_paid|default:"0" }}</td>
-                <td>${{ member.member_balance|default:"0" }}</td>
+                <td data-label="Member"><a class="{% if member.id in overdue_member_ids %}member-overdue{% endif %}" href="/members/{{ member.id }}/">{{ member.full_name }}</a></td>
+                <td data-label="Monthly amount">${{ member.monthly_contribution_amount }}</td>
+                <td data-label="Total contributed">${{ member.total_contributed|default:"0" }}</td>
+                <td data-label="Principal loaned">${{ member.total_principal_loaned|default:"0" }}</td>
+                <td data-label="Interest taken">${{ member.total_interest_collected|default:"0" }}</td>
+                <td data-label="Cash given">${{ member.total_cash_received|default:"0" }}</td>
+                <td data-label="Installments paid">${{ member.total_installment_paid|default:"0" }}</td>
+                <td data-label="Balance">${{ member.member_balance|default:"0" }}</td>
             </tr>
             {% empty %}
             <tr><td colspan="8">No members yet.</td></tr>

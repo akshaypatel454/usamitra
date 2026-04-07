@@ -4,31 +4,28 @@
 <h1 class="page-title">Remove <span class="{% if member.id in overdue_member_ids %}member-overdue{% endif %}">{{ member.full_name }}</span></h1>
 <div class="grid two">
     <div class="card">
-        <h2>Exit Calculation</h2>
-        <table>
+        <h2 class="section-title">Exit Calculation</h2>
+        <div class="table-wrap responsive-stack">
+        <table class="responsive-table">
             <tbody>
                 <tr>
-                    <th>Available Cash Now</th>
-                    <td>${{ available_cash_now }}</td>
+                    <td data-label="Available cash now">${{ available_cash_now }}</td>
                 </tr>
                 <tr>
-                    <th>Outstanding Installments</th>
-                    <td>${{ outstanding_installments_total }}</td>
+                    <td data-label="Outstanding installments">${{ outstanding_installments_total }}</td>
                 </tr>
                 <tr>
-                    <th>Exit Pool Total</th>
-                    <td>${{ exit_pool_total }}</td>
+                    <td data-label="Exit pool total">${{ exit_pool_total }}</td>
                 </tr>
                 <tr>
-                    <th>Active Members</th>
-                    <td>{{ active_member_count }}</td>
+                    <td data-label="Active members">{{ active_member_count }}</td>
                 </tr>
                 <tr>
-                    <th>Settlement Share</th>
-                    <td><strong>${{ settlement_share }}</strong></td>
+                    <td data-label="Settlement share"><strong>${{ settlement_share }}</strong></td>
                 </tr>
             </tbody>
         </table>
+        </div>
     </div>
     <div class="card">
         <h2>What this does</h2>

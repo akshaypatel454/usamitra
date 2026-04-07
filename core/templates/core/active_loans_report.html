@@ -3,8 +3,8 @@
 {% block content %}
 <h1 class="page-title">Active Loans</h1>
 <div class="card">
-    <div class="table-wrap">
-    <table>
+    <div class="table-wrap responsive-stack">
+    <table class="responsive-table">
         <thead>
             <tr>
                 <th>Member</th>
@@ -23,17 +23,17 @@
         <tbody>
             {% for loan in loans %}
             <tr>
-                <td><span class="{% if loan.member_id in overdue_member_ids %}member-overdue{% endif %}">{{ loan.member.full_name }}</span></td>
-                <td>{{ loan.issued_on }}</td>
-                <td>${{ loan.principal_amount }}</td>
-                <td>${{ loan.interest_amount }}</td>
-                <td>${{ loan.net_disbursed_amount }}</td>
-                <td>${{ loan.total_installments_paid }}</td>
-                <td>${{ loan.remaining_principal }}</td>
-                <td><span class="pill {% if loan.status == 'overdue' %}warn{% elif loan.status == 'closed' %}ok{% endif %}">{{ loan.get_status_display }}</span></td>
-                <td>{% if loan.next_due_installment_number %}#{{ loan.next_due_installment_number }}{% else %}-{% endif %}</td>
-                <td>{{ loan.next_due_date|default:"-" }}</td>
-                <td>{% if loan.next_due_amount %}${{ loan.next_due_amount }}{% else %}-{% endif %}</td>
+                <td data-label="Member"><span class="{% if loan.member_id in overdue_member_ids %}member-overdue{% endif %}">{{ loan.member.full_name }}</span></td>
+                <td data-label="Issued">{{ loan.issued_on }}</td>
+                <td data-label="Principal">${{ loan.principal_amount }}</td>
+                <td data-label="Interest">${{ loan.interest_amount }}</td>
+                <td data-label="Cash given">${{ loan.net_disbursed_amount }}</td>
+                <td data-label="Paid back">${{ loan.total_installments_paid }}</td>
+                <td data-label="Remaining principal">${{ loan.remaining_principal }}</td>
+                <td data-label="Status"><span class="pill {% if loan.status == 'overdue' %}warn{% elif loan.status == 'closed' %}ok{% endif %}">{{ loan.get_status_display }}</span></td>
+                <td data-label="Next installment">{% if loan.next_due_installment_number %}#{{ loan.next_due_installment_number }}{% else %}-{% endif %}</td>
+                <td data-label="Next due date">{{ loan.next_due_date|default:"-" }}</td>
+                <td data-label="Next due amount">{% if loan.next_due_amount %}${{ loan.next_due_amount }}{% else %}-{% endif %}</td>
             </tr>
             {% empty %}
             <tr><td colspan="11">No active loans.</td></tr>

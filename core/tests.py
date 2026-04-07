@@ -1,6 +1,7 @@
 from datetime import date
 from decimal import Decimal
 
+from django.core.management import call_command
 from django.test import TestCase
 from django.utils import timezone
 
@@ -657,3 +658,33 @@ class SeedMemberTests(TestCase):
             Loan.objects.count(),
             0,
         )
+
+
+class HistoricalSnapshotTests(TestCase):
+    def test_snapshot_loader_includes_april_2026_and_excludes_may_2023(self):
+        call_command("load_april_2026_snapshot")
+
+        member = Member.objects.get(full_name="AKSHAY")
+        contribution_months = list(
+            MonthlyContribution.objects.filter(member=member)
+            .order_by("month")
+            .values_list("month", flat=True)
+        )
+
+        self.assertEqual(len(contribution_months), 35)
+        self.assertEqual(contribution_months[0], date(2023, 6, 1))
+        self.assertEqual(contribution_months[-1], date(2026, 4, 1))
+
+    def test_dashboard_upcoming_dues_sum_all_next_month_loans_plus_savings_from_snapshot(self):
+        call_command("load_april_2026_snapshot")
+
+        response = self.client.get("/")
+
+        self.assertEqual(response.status_code, 200)
+        akshay = next(
+            member for member in response.context["member_upcoming_dues"]
+            if member.full_name == "AKSHAY"
+        )
+        self.assertEqual(akshay.next_month_installment_total, Decimal("6000.00"))
+        self.assertEqual(akshay.savings_due, Decimal("1000.00"))
+        self.assertEqual(akshay.total_upcoming_due, Decimal("7000.00"))

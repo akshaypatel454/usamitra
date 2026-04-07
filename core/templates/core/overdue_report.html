@@ -3,7 +3,8 @@
 {% block content %}
 <h1 class="page-title">Overdue Report</h1>
 <div class="card">
-    <table>
+    <div class="table-wrap responsive-stack">
+    <table class="responsive-table">
         <thead>
             <tr>
                 <th>Member</th>
@@ -17,17 +18,18 @@
         <tbody>
             {% for item in installments %}
             <tr>
-                <td><span class="member-overdue">{{ item.loan.member.full_name }}</span></td>
-                <td>{{ item.due_date }}</td>
-                <td>${{ item.loan.principal_amount }}</td>
-                <td>#{{ item.installment_number }}</td>
-                <td>${{ item.amount_due }}</td>
-                <td><span class="pill warn">{{ item.get_status_display }}</span></td>
+                <td data-label="Member"><span class="member-overdue">{{ item.loan.member.full_name }}</span></td>
+                <td data-label="Due date">{{ item.due_date }}</td>
+                <td data-label="Principal">${{ item.loan.principal_amount }}</td>
+                <td data-label="Installment">#{{ item.installment_number }}</td>
+                <td data-label="Amount due">${{ item.amount_due }}</td>
+                <td data-label="Status"><span class="pill warn">{{ item.get_status_display }}</span></td>
             </tr>
             {% empty %}
             <tr><td colspan="6">No overdue installments.</td></tr>
             {% endfor %}
         </tbody>
     </table>
+    </div>
 </div>
 {% endblock %}

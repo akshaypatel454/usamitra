@@ -3,7 +3,8 @@
 {% block content %}
 <h1 class="page-title">Interest Given Out</h1>
 <div class="card">
-    <table>
+    <div class="table-wrap responsive-stack">
+    <table class="responsive-table">
         <thead>
             <tr>
                 <th>Member</th>
@@ -15,15 +16,16 @@
         <tbody>
             {% for payout in payouts %}
             <tr>
-                <td><span class="{% if payout.member_id in overdue_member_ids %}member-overdue{% endif %}">{{ payout.member.full_name }}</span></td>
-                <td>{{ payout.payout_date }}</td>
-                <td>${{ payout.amount }}</td>
-                <td>{{ payout.notes|default:"-" }}</td>
+                <td data-label="Member"><span class="{% if payout.member_id in overdue_member_ids %}member-overdue{% endif %}">{{ payout.member.full_name }}</span></td>
+                <td data-label="Date">{{ payout.payout_date }}</td>
+                <td data-label="Amount">${{ payout.amount }}</td>
+                <td data-label="Notes">{{ payout.notes|default:"-" }}</td>
             </tr>
             {% empty %}
             <tr><td colspan="4">No interest payouts recorded.</td></tr>
             {% endfor %}
         </tbody>
     </table>
+    </div>
 </div>
 {% endblock %}

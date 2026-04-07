@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from django.contrib import messages
-from django.db.models import Count, DecimalField, F, OuterRef, Q, Subquery, Sum, Value
+from django.db.models import Count, DecimalField, ExpressionWrapper, F, OuterRef, Q, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -104,6 +104,27 @@ def get_fund_totals():
     }
 
 
+def outstanding_due_total_subquery(month_start, month_end):
+    return (
+        Installment.objects.filter(
+            loan__member=OuterRef("pk"),
+            due_date__gte=month_start,
+            due_date__lt=month_end,
+        )
+        .exclude(status=Installment.Status.PAID)
+        .values("loan__member")
+        .annotate(
+            total=Sum(
+                ExpressionWrapper(
+                    F("amount_due") - F("amount_paid"),
+                    output_field=DecimalField(max_digits=12, decimal_places=2),
+                )
+            )
+        )
+        .values("total")[:1]
+    )
+
+
 def dashboard(request):
     refresh_open_loan_statuses()
     today = timezone.localdate()
@@ -140,7 +161,14 @@ def dashboard(request):
     next_month_installment_total = Installment.objects.filter(
         due_date__gte=next_month,
         due_date__lt=month_after_next,
-    ).exclude(status=Installment.Status.PAID).aggregate(total=Sum("amount_due"))["total"] or Decimal("0")
+    ).exclude(status=Installment.Status.PAID).aggregate(
+        total=Sum(
+            ExpressionWrapper(
+                F("amount_due") - F("amount_paid"),
+                output_field=DecimalField(max_digits=12, decimal_places=2),
+            )
+        )
+    )["total"] or Decimal("0")
     next_month_savings_due_subquery = MonthlyContribution.objects.filter(
         member=OuterRef("pk"),
         month=next_month,
@@ -161,17 +189,7 @@ def dashboard(request):
     total_cash = fund_totals["total_cash"]
     member_upcoming_dues = Member.objects.filter(is_active=True).annotate(
         next_month_installment_total=Coalesce(
-            Subquery(
-                Installment.objects.filter(
-                    loan__member=OuterRef("pk"),
-                    due_date__gte=next_month,
-                    due_date__lt=month_after_next,
-                )
-                .exclude(status=Installment.Status.PAID)
-                .values("loan__member")
-                .annotate(total=Sum("amount_due"))
-                .values("total")[:1]
-            ),
+            Subquery(outstanding_due_total_subquery(next_month, month_after_next)),
             Value(Decimal("0.00")),
         ),
         savings_due=Coalesce(
@@ -183,17 +201,7 @@ def dashboard(request):
             Subquery(next_month_savings_due_subquery),
             F("monthly_contribution_amount"),
         ) + Coalesce(
-            Subquery(
-                Installment.objects.filter(
-                    loan__member=OuterRef("pk"),
-                    due_date__gte=next_month,
-                    due_date__lt=month_after_next,
-                )
-                .exclude(status=Installment.Status.PAID)
-                .values("loan__member")
-                .annotate(total=Sum("amount_due"))
-                .values("total")[:1]
-            ),
+            Subquery(outstanding_due_total_subquery(next_month, month_after_next)),
             Value(Decimal("0.00")),
         )
     ).order_by("full_name")
@@ -233,6 +241,7 @@ def dashboard(request):
         "total_principal_loaned": Loan.objects.aggregate(
             total=Sum("principal_amount")
         )["total"] or Decimal("0"),
+        "this_month_cash_disbursed": cash_given_this_month,
         "total_cash_disbursed": net_disbursed_total,
         "recent_loans": Loan.objects.select_related("member").order_by("-issued_on")[:5],
         "recent_dues": Installment.objects.select_related("loan", "loan__member").filter(
