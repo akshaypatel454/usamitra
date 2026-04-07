@@ -160,14 +160,18 @@
         .value.ok { color: var(--ok); }
         .value.warn { color: var(--warn); }
         .table-wrap {
+            display: block;
             width: 100%;
             overflow-x: auto;
+            overflow-y: hidden;
             -webkit-overflow-scrolling: touch;
+            border: 1px solid var(--line);
+            border-radius: 14px;
         }
         table {
-            width: 100%;
+            width: max-content;
+            min-width: 100%;
             border-collapse: collapse;
-            border: 1px solid var(--line);
             min-width: 640px;
         }
         th, td {
@@ -176,6 +180,7 @@
             border-bottom: 1px solid var(--line);
             border-right: 1px solid var(--line);
             vertical-align: top;
+            white-space: nowrap;
         }
         th {
             color: var(--muted);
