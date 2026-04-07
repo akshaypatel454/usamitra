@@ -1,0 +1,12 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+<h1 class="page-title">Skip Next Saving Installment</h1>
+<div class="card">
+    <p>This will set the saving installment amount to $0.00 for all {{ member_count }} active members for {{ next_month|date:"F Y" }}.</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">Confirm Skip</button>
+    </form>
+</div>
+{% endblock %}

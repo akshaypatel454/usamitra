@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>USA MITRA MANDAL</title>
+    <style>
+        :root {
+            --bg: #f5f0e6;
+            --surface: #fffdf8;
+            --ink: #2d261f;
+            --muted: #75685a;
+            --accent: #15616d;
+            --accent-soft: #d8eff2;
+            --line: #e6dccf;
+            --ok: #2a7f62;
+            --warn: #c44536;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            background: linear-gradient(180deg, #f8f3e9 0%, var(--bg) 100%);
+            color: var(--ink);
+            font-family: Georgia, "Times New Roman", serif;
+        }
+        .shell {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            min-height: 100vh;
+        }
+        .nav {
+            padding: 28px 18px;
+            border-right: 1px solid var(--line);
+            background: rgba(255, 253, 248, 0.85);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+        }
+        .brand {
+            font-size: 1.7rem;
+            font-weight: 700;
+            margin-bottom: 18px;
+        }
+        .nav a {
+            display: block;
+            padding: 11px 12px;
+            margin-bottom: 8px;
+            text-decoration: none;
+            color: var(--ink);
+            border-radius: 14px;
+        }
+        .nav a:hover {
+            background: var(--accent-soft);
+        }
+        .nav-meta {
+            margin-top: 18px;
+            padding-top: 18px;
+            border-top: 1px solid var(--line);
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+        .nav-meta form {
+            margin-top: 10px;
+        }
+        .nav-meta button {
+            width: 100%;
+        }
+        .main {
+            padding: 28px 22px 40px;
+        }
+        .page-title {
+            margin: 0 0 18px;
+            font-size: 2.3rem;
+            letter-spacing: -0.04em;
+        }
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 18px;
+            box-shadow: 0 10px 25px rgba(72, 51, 31, 0.05);
+        }
+        .card.ok-card {
+            background: #dff3ea;
+            border-color: #b8dfcf;
+        }
+        .card.warn-card {
+            background: #fde4de;
+            border-color: #f1c1b6;
+        }
+        a.card-link {
+            display: block;
+            color: inherit;
+            text-decoration: none;
+        }
+        a.card-link .card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 12px 28px rgba(21, 97, 109, 0.12);
+        }
+        .grid {
+            display: grid;
+            gap: 16px;
+        }
+        .grid.two {
+            grid-template-columns: 1fr 1fr;
+        }
+        .messages {
+            margin-bottom: 16px;
+        }
+        .msg {
+            padding: 10px 12px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+        form p {
+            margin: 0 0 14px;
+        }
+        label {
+            display: block;
+            font-size: 0.92rem;
+            margin-bottom: 5px;
+            color: var(--muted);
+        }
+        input, select, textarea, button {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--line);
+            font: inherit;
+            background: white;
+        }
+        button {
+            background: var(--ink);
+            color: white;
+            cursor: pointer;
+            width: auto;
+            min-width: 140px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid var(--line);
+        }
+        th, td {
+            text-align: left;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--line);
+            border-right: 1px solid var(--line);
+        }
+        th {
+            color: var(--muted);
+            font-size: 0.9rem;
+            background: #f7f1e7;
+        }
+        tr:last-child td {
+            border-bottom: 0;
+        }
+        th:last-child, td:last-child {
+            border-right: 0;
+        }
+        .pill {
+            display: inline-block;
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 0.82rem;
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+        .pill.warn { background: #fde4de; color: var(--warn); }
+        .pill.ok { background: #dff3ea; color: var(--ok); }
+        .member-overdue {
+            color: var(--warn);
+            font-weight: 700;
+        }
+        @media (max-width: 900px) {
+            .shell { grid-template-columns: 1fr; }
+            .nav { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+            .grid.two { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <aside class="nav">
+            <div class="brand">USA MITRA MANDAL</div>
+            <a href="/">Dashboard</a>
+            {% if can_edit %}
+            <a href="/members/new/">Add Member</a>
+            <a href="/contributions/new/">Record Contribution</a>
+            <a href="/installments/new/">Record Installment</a>
+            <a href="/loans/new/">Create Loan</a>
+            <a href="/interest-payouts/new/">Give Interest To Everybody</a>
+            <a href="/savings/skip-next/">Skip Next Saving</a>
+            {% endif %}
+            <a href="/reports/active-loans/">Active Loans</a>
+            <a href="/reports/monthly-summary/">Monthly Summary</a>
+            <a href="/reports/members/">Member Report</a>
+            <a href="/reports/overdue/">Overdue Report</a>
+            <div class="nav-meta">
+                <div>{% if can_edit %}Editor access enabled{% else %}Read-only access{% endif %}</div>
+                {% if can_edit %}
+                <form method="post" action="/editor-lock/">
+                    {% csrf_token %}
+                    <button type="submit">Lock Editor Access</button>
+                </form>
+                {% else %}
+                <a href="/editor-access/">Enter Admin Password</a>
+                {% endif %}
+            </div>
+        </aside>
+        <main class="main">
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="msg">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</body>
+</html>

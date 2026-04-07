@@ -1,0 +1,39 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+<h1 class="page-title">Monthly Summary</h1>
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>Month</th>
+                <th>Contributions Received</th>
+                <th>Installments Received</th>
+                <th>Interest Collected</th>
+                <th>Total Cash In</th>
+                <th>Loan Principal Issued</th>
+                <th>Cash Given</th>
+                <th>Net Change</th>
+                <th>Ending Cash</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                <td>{{ row.label }}</td>
+                <td>${{ row.contributions_received }}</td>
+                <td>${{ row.installments_received }}</td>
+                <td>${{ row.interest_collected }}</td>
+                <td>${{ row.total_cash_in }}</td>
+                <td>${{ row.loans_issued_principal }}</td>
+                <td>${{ row.cash_given }}</td>
+                <td>${{ row.net_change }}</td>
+                <td><strong>${{ row.ending_cash }}</strong></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="9">No monthly activity yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+<h1 class="page-title">Cash Given Out</h1>
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>Member</th>
+                <th>Issued</th>
+                <th>Principal</th>
+                <th>Interest Taken</th>
+                <th>Cash Given</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for loan in loans %}
+            <tr>
+                <td><span class="{% if loan.member_id in overdue_member_ids %}member-overdue{% endif %}">{{ loan.member.full_name }}</span></td>
+                <td>{{ loan.issued_on }}</td>
+                <td>${{ loan.principal_amount }}</td>
+                <td>${{ loan.interest_amount }}</td>
+                <td>${{ loan.net_disbursed_amount }}</td>
+                <td><span class="pill {% if loan.status == 'overdue' %}warn{% elif loan.status == 'closed' %}ok{% endif %}">{{ loan.get_status_display }}</span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6">No loans recorded.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

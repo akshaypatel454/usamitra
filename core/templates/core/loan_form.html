@@ -1,0 +1,20 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+<h1 class="page-title">{{ page_title|default:"Create Loan" }}</h1>
+<div class="grid two">
+    <div class="card">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">{{ submit_label|default:"Create Loan" }}</button>
+        </form>
+    </div>
+    <div class="card">
+        <h2>What this does</h2>
+        <p>Creates a loan using the manual upfront interest amount you enter and stores the net cash actually given to the member.</p>
+        <p>The monthly installments are principal-only repayments, and the first installment starts automatically next month.</p>
+        <p>If installment payments already exist, schedule fields cannot be changed here.</p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+<h1 class="page-title">Remove <span class="{% if member.id in overdue_member_ids %}member-overdue{% endif %}">{{ member.full_name }}</span></h1>
+<div class="grid two">
+    <div class="card">
+        <h2>Exit Calculation</h2>
+        <table>
+            <tbody>
+                <tr>
+                    <th>Available Cash Now</th>
+                    <td>${{ available_cash_now }}</td>
+                </tr>
+                <tr>
+                    <th>Outstanding Installments</th>
+                    <td>${{ outstanding_installments_total }}</td>
+                </tr>
+                <tr>
+                    <th>Exit Pool Total</th>
+                    <td>${{ exit_pool_total }}</td>
+                </tr>
+                <tr>
+                    <th>Active Members</th>
+                    <td>{{ active_member_count }}</td>
+                </tr>
+                <tr>
+                    <th>Settlement Share</th>
+                    <td><strong>${{ settlement_share }}</strong></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="card">
+        <h2>What this does</h2>
+        <p>This keeps all history but removes the member from active counts and future monthly contribution expectations.</p>
+        <p>The settlement share is calculated as available cash plus outstanding installments, divided by the active member count.</p>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit">Confirm Remove Member</button>
+        </form>
+        <p><a href="/members/{{ member.id }}/">Cancel</a></p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,167 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+<h1 class="page-title"><span class="{% if member.id in overdue_member_ids %}member-overdue{% endif %}">{{ member.full_name }}</span></h1>
+
+<div class="grid two" style="grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 18px;">
+    <div class="card">
+        <div class="label">Monthly Contribution</div>
+        <div class="value">${{ member.monthly_contribution_amount }}</div>
+    </div>
+    <div class="card">
+        <div class="label">Total Contributed</div>
+        <div class="value ok">${{ member.total_contributed }}</div>
+    </div>
+    <div class="card">
+        <div class="label">Cash Received</div>
+        <div class="value">${{ member.total_cash_received }}</div>
+    </div>
+    <div class="card">
+        <div class="label">Outstanding Principal</div>
+        <div class="value {% if outstanding_principal > 0 %}warn{% else %}ok{% endif %}">${{ outstanding_principal }}</div>
+    </div>
+</div>
+
+<div class="grid two" style="margin-bottom: 18px;">
+    <div class="card">
+        <h2>Loan Summary</h2>
+        <table>
+            <tbody>
+                <tr>
+                    <th>Total Principal Loaned</th>
+                    <td>${{ member.total_principal_loaned }}</td>
+                </tr>
+                <tr>
+                    <th>Total Interest Taken</th>
+                    <td>${{ member.total_interest_collected }}</td>
+                </tr>
+                <tr>
+                    <th>Total Cash Given</th>
+                    <td>${{ member.total_cash_received }}</td>
+                </tr>
+                <tr>
+                    <th>Total Installments Paid</th>
+                    <td>${{ member.total_installment_paid }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="card">
+        <h2>Contact</h2>
+        <table>
+            <tbody>
+                <tr>
+                    <th>Email</th>
+                    <td>{{ member.email|default:"-" }}</td>
+                </tr>
+                <tr>
+                    <th>Phone</th>
+                    <td>{{ member.phone|default:"-" }}</td>
+                </tr>
+                <tr>
+                    <th>Status</th>
+                    <td>{% if member.is_active %}<span class="pill ok">Active</span>{% else %}<span class="pill warn">Inactive</span>{% endif %}</td>
+                </tr>
+                <tr>
+                    <th>Joined</th>
+                    <td>{{ member.joined_on }}</td>
+                </tr>
+            </tbody>
+        </table>
+        {% if can_edit and member.is_active %}
+        <p style="margin-top: 16px;"><a href="/members/{{ member.id }}/remove/">Remove Member From Active Group</a></p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="grid two" style="margin-bottom: 18px;">
+    <div class="card">
+        <h2>Contributions</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Month</th>
+                    <th>Due</th>
+                    <th>Paid</th>
+                    <th>Status</th>
+                    {% if can_edit %}<th>Actions</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for contribution in contributions %}
+                <tr>
+                    <td>{{ contribution.month|date:"M Y" }}</td>
+                    <td>${{ contribution.amount_due }}</td>
+                    <td>${{ contribution.amount_paid }}</td>
+                    <td><span class="pill {% if contribution.status == 'paid' %}ok{% elif contribution.status == 'partial' %}warn{% endif %}">{{ contribution.get_status_display }}</span></td>
+                    {% if can_edit %}<td><a href="/contributions/{{ contribution.id }}/edit/">Edit</a> | <a href="/contributions/{{ contribution.id }}/delete/">Delete</a></td>{% endif %}
+                </tr>
+                {% empty %}
+                <tr><td colspan="{% if can_edit %}5{% else %}4{% endif %}">No contributions recorded.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card">
+        <h2>Loans</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Issued</th>
+                    <th>Principal</th>
+                    <th>Interest</th>
+                    <th>Cash Given</th>
+                    <th>Status</th>
+                    {% if can_edit %}<th>Actions</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for loan in loans %}
+                <tr>
+                    <td>{{ loan.issued_on }}</td>
+                    <td>${{ loan.principal_amount }}</td>
+                    <td>${{ loan.interest_amount }}</td>
+                    <td>${{ loan.net_disbursed_amount }}</td>
+                    <td><span class="pill {% if loan.status == 'closed' %}ok{% elif loan.status == 'overdue' %}warn{% endif %}">{{ loan.get_status_display }}</span></td>
+                    {% if can_edit %}<td><a href="/loans/{{ loan.id }}/edit/">Edit</a> | <a href="/loans/{{ loan.id }}/delete/">Delete</a></td>{% endif %}
+                </tr>
+                {% empty %}
+                <tr><td colspan="{% if can_edit %}6{% else %}5{% endif %}">No loans recorded.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Installment History</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Due Date</th>
+                <th>Loan Issued</th>
+                <th>Installment</th>
+                <th>Amount Due</th>
+                <th>Amount Paid</th>
+                <th>Status</th>
+                {% if can_edit %}<th>Actions</th>{% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for installment in installments %}
+            <tr>
+                <td>{{ installment.due_date }}</td>
+                <td>{{ installment.loan.issued_on }}</td>
+                <td>#{{ installment.installment_number }}</td>
+                <td>${{ installment.amount_due }}</td>
+                <td>${{ installment.amount_paid }}</td>
+                <td><span class="pill {% if installment.status == 'paid' %}ok{% elif installment.status == 'partial' or installment.status == 'pending' %}warn{% endif %}">{{ installment.get_status_display }}</span></td>
+                {% if can_edit %}<td><a href="/installments/{{ installment.id }}/edit/">Edit</a> | <a href="/installments/{{ installment.id }}/delete/">Delete</a></td>{% endif %}
+            </tr>
+            {% empty %}
+            <tr><td colspan="{% if can_edit %}7{% else %}6{% endif %}">No installments recorded.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

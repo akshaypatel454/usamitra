@@ -1,0 +1,15 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+<h1 class="page-title">Editor Access</h1>
+<div class="card" style="max-width: 420px;">
+    <form method="post">
+        {% csrf_token %}
+        <p>
+            <label for="id_password">Admin Password</label>
+            <input id="id_password" name="password" type="password" required>
+        </p>
+        <button type="submit">Unlock Editor Access</button>
+    </form>
+</div>
+{% endblock %}
