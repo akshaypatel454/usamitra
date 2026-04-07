@@ -3,7 +3,7 @@
 {% block content %}
 <h1 class="page-title"><span class="{% if member.id in overdue_member_ids %}member-overdue{% endif %}">{{ member.full_name }}</span></h1>
 
-<div class="grid two" style="grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 18px;">
+<div class="grid metric-grid" style="margin-bottom: 18px;">
     <div class="card">
         <div class="label">Monthly Contribution</div>
         <div class="value">${{ member.monthly_contribution_amount }}</div>
@@ -25,6 +25,7 @@
 <div class="grid two" style="margin-bottom: 18px;">
     <div class="card">
         <h2>Loan Summary</h2>
+        <div class="table-wrap">
         <table>
             <tbody>
                 <tr>
@@ -45,9 +46,11 @@
                 </tr>
             </tbody>
         </table>
+        </div>
     </div>
     <div class="card">
         <h2>Contact</h2>
+        <div class="table-wrap">
         <table>
             <tbody>
                 <tr>
@@ -68,6 +71,7 @@
                 </tr>
             </tbody>
         </table>
+        </div>
         {% if can_edit and member.is_active %}
         <p style="margin-top: 16px;"><a href="/members/{{ member.id }}/remove/">Remove Member From Active Group</a></p>
         {% endif %}
@@ -77,6 +81,7 @@
 <div class="grid two" style="margin-bottom: 18px;">
     <div class="card">
         <h2>Contributions</h2>
+        <div class="table-wrap">
         <table>
             <thead>
                 <tr>
@@ -101,9 +106,11 @@
                 {% endfor %}
             </tbody>
         </table>
+        </div>
     </div>
     <div class="card">
         <h2>Loans</h2>
+        <div class="table-wrap">
         <table>
             <thead>
                 <tr>
@@ -130,11 +137,13 @@
                 {% endfor %}
             </tbody>
         </table>
+        </div>
     </div>
 </div>
 
 <div class="card">
     <h2>Installment History</h2>
+    <div class="table-wrap">
     <table>
         <thead>
             <tr>
@@ -163,5 +172,6 @@
             {% endfor %}
         </tbody>
     </table>
+    </div>
 </div>
 {% endblock %}

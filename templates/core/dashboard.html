@@ -2,7 +2,7 @@
 
 {% block content %}
 <h1 class="page-title">Dashboard</h1>
-<div class="grid two" style="grid-template-columns: repeat(8, minmax(0, 1fr)); margin-bottom: 18px;">
+<div class="grid metric-grid wide">
     <a class="card-link" href="/reports/members/"><div class="card">
         <div class="label">Active Members</div>
         <div class="value">{{ member_count }}</div>
@@ -40,6 +40,7 @@
 <div class="grid two">
     <div class="card">
         <h2>Cash Summary</h2>
+        <div class="table-wrap">
         <table>
             <tbody>
                 <tr>
@@ -76,10 +77,12 @@
                 </tr>
             </tbody>
         </table>
+        </div>
     </div>
 
     <div class="card">
         <h2>Upcoming Member Dues</h2>
+        <div class="table-wrap">
         <table>
             <thead>
                 <tr>
@@ -104,6 +107,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        </div>
     </div>
 </div>
 {% endblock %}
