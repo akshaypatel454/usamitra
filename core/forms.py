@@ -34,6 +34,15 @@ class InterestPayoutAllForm(forms.Form):
     notes = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 2}))
 
 
+class MemberRemovalForm(forms.Form):
+    payout_amount = forms.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.00"))
+    payout_date = forms.DateField(
+        initial=timezone.localdate,
+        widget=forms.DateInput(attrs={"type": "date"}),
+    )
+    notes = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 2}))
+
+
 def next_month_same_day(value):
     year = value.year + (value.month // 12)
     month = 1 if value.month == 12 else value.month + 1
@@ -161,6 +170,190 @@ class InstallmentPaymentForm(forms.Form):
         installment.save()
         installment.loan.refresh_status()
         return installment
+
+
+class CombinedPaymentForm(forms.Form):
+    member = forms.ModelChoiceField(queryset=Member.objects.filter(is_active=True).order_by("full_name"))
+    amount_paid = forms.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"))
+    paid_on = forms.DateField(
+        initial=timezone.localdate,
+        widget=forms.DateInput(attrs={"type": "date"}),
+    )
+    allocation_target = forms.ChoiceField(required=False)
+    notes = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 2}))
+
+    def __init__(self, *args, payment_targets=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.payment_targets = payment_targets or []
+        if self.payment_targets:
+            self.fields["allocation_target"].choices = [
+                (item["key"], item["label"]) for item in self.payment_targets
+            ]
+        else:
+            self.fields["allocation_target"].widget = forms.HiddenInput()
+
+    @staticmethod
+    def next_month_start():
+        today = timezone.localdate()
+        return today.replace(
+            year=today.year + (today.month // 12),
+            month=1 if today.month == 12 else today.month + 1,
+            day=1,
+        )
+
+    def get_payment_targets(self):
+        member = self.cleaned_data["member"]
+        next_month = self.next_month_start()
+        month_after_next = next_month.replace(
+            year=next_month.year + (next_month.month // 12),
+            month=1 if next_month.month == 12 else next_month.month + 1,
+            day=1,
+        )
+
+        targets = []
+        contribution = MonthlyContribution.objects.filter(
+            member=member,
+            month=next_month,
+        ).first()
+        saving_remaining = (
+            contribution.amount_due - contribution.amount_paid
+            if contribution
+            else member.monthly_contribution_amount
+        )
+        if saving_remaining > 0:
+            targets.append(
+                {
+                    "key": "saving",
+                    "kind": "saving",
+                    "remaining": saving_remaining,
+                    "label": f"Saving for {next_month:%b %Y} | Due ${saving_remaining}",
+                    "month": next_month,
+                    "object": contribution,
+                }
+            )
+
+        installments = Installment.objects.select_related("loan").filter(
+            loan__member=member,
+            due_date__gte=next_month,
+            due_date__lt=month_after_next,
+        ).exclude(status=Installment.Status.PAID).order_by("due_date", "installment_number", "id")
+
+        for installment in installments:
+            remaining = installment.amount_due - installment.amount_paid
+            if remaining <= 0:
+                continue
+            targets.append(
+                {
+                    "key": f"installment:{installment.id}",
+                    "kind": "installment",
+                    "remaining": remaining,
+                    "label": (
+                        f"Loan installment for {installment.due_date:%b %Y} | "
+                        f"Loan ${installment.loan.principal_amount} | "
+                        f"Installment #{installment.installment_number} | Due ${remaining}"
+                    ),
+                    "object": installment,
+                }
+            )
+        return targets
+
+    def total_due(self):
+        return sum((item["remaining"] for item in self.payment_targets), Decimal("0.00"))
+
+    def clean(self):
+        cleaned_data = super().clean()
+        member = cleaned_data.get("member")
+        amount_paid = cleaned_data.get("amount_paid")
+        if not member or amount_paid is None:
+            return cleaned_data
+
+        if not self.payment_targets:
+            self.payment_targets = self.get_payment_targets()
+        total_due = self.total_due()
+        if total_due <= 0:
+            raise forms.ValidationError("This member has no upcoming saving or loan installment due.")
+        if amount_paid > total_due:
+            self.add_error("amount_paid", f"Payment cannot be greater than the upcoming total of ${total_due}.")
+            return cleaned_data
+        if amount_paid < total_due and self.payment_targets:
+            allocation_target = cleaned_data.get("allocation_target")
+            if not allocation_target:
+                self.add_error(
+                    "allocation_target",
+                    "This payment is less than the total due. Select whether it is for saving or a loan installment.",
+                )
+            else:
+                selected_target = next(
+                    (item for item in self.payment_targets if item["key"] == allocation_target),
+                    None,
+                )
+                if selected_target is None:
+                    self.add_error("allocation_target", "Select a valid payment target.")
+                elif amount_paid > selected_target["remaining"]:
+                    self.add_error(
+                        "amount_paid",
+                        f"Payment cannot be greater than the selected due amount of ${selected_target['remaining']}.",
+                    )
+        return cleaned_data
+
+    def _save_contribution_payment(self, target, amount):
+        member = self.cleaned_data["member"]
+        contribution = target["object"] or MonthlyContribution.objects.create(
+            member=member,
+            month=target["month"],
+            amount_due=member.monthly_contribution_amount,
+            amount_paid=Decimal("0.00"),
+            status=MonthlyContribution.Status.PENDING,
+        )
+        contribution.amount_due = member.monthly_contribution_amount
+        contribution.amount_paid += amount
+        contribution.paid_on = self.cleaned_data["paid_on"]
+        contribution.notes = self.cleaned_data["notes"]
+        if contribution.amount_paid >= contribution.amount_due:
+            contribution.status = MonthlyContribution.Status.PAID
+        elif contribution.amount_paid > 0:
+            contribution.status = MonthlyContribution.Status.PARTIAL
+        else:
+            contribution.status = MonthlyContribution.Status.PENDING
+        contribution.save()
+        return contribution
+
+    def _save_installment_payment(self, installment, amount):
+        installment.amount_paid += amount
+        installment.paid_on = self.cleaned_data["paid_on"]
+        installment.notes = self.cleaned_data["notes"]
+        if installment.amount_paid >= installment.amount_due:
+            installment.status = Installment.Status.PAID
+        elif installment.amount_paid > 0:
+            installment.status = Installment.Status.PARTIAL
+        else:
+            installment.status = Installment.Status.PENDING
+        installment.save()
+        installment.loan.refresh_status()
+        return installment
+
+    def save(self):
+        amount_paid = self.cleaned_data["amount_paid"]
+        total_due = self.total_due()
+        results = {"contribution": None, "installments": []}
+
+        if amount_paid == total_due:
+            for target in self.payment_targets:
+                if target["kind"] == "saving":
+                    results["contribution"] = self._save_contribution_payment(target, target["remaining"])
+                else:
+                    results["installments"].append(
+                        self._save_installment_payment(target["object"], target["remaining"])
+                    )
+            return results
+
+        allocation_target = self.cleaned_data["allocation_target"]
+        target = next(item for item in self.payment_targets if item["key"] == allocation_target)
+        if target["kind"] == "saving":
+            results["contribution"] = self._save_contribution_payment(target, amount_paid)
+        else:
+            results["installments"].append(self._save_installment_payment(target["object"], amount_paid))
+        return results
 
 
 class LoanForm(forms.Form):

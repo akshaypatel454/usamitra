@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from .auth_utils import EDITOR_SESSION_KEY
 from .forms import InstallmentPaymentForm, LoanForm
-from .models import Installment, Loan, Member, MemberInterestPayout, MonthlyContribution
+from .models import FundAdjustment, Installment, Loan, Member, MemberInterestPayout, MonthlyContribution
 
 
 class LoanFormTests(TestCase):
@@ -65,14 +65,14 @@ class AccessControlTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_read_only_user_cannot_open_edit_pages(self):
-        contribution_response = self.client.get("/contributions/new/")
+        contribution_response = self.client.get("/payments/new/")
 
         self.assertEqual(contribution_response.status_code, 403)
 
     def test_editor_password_unlock_allows_edit_pages(self):
         self.enable_editor_access()
 
-        response = self.client.get("/contributions/new/")
+        response = self.client.get("/payments/new/")
 
         self.assertEqual(response.status_code, 200)
 
@@ -238,6 +238,121 @@ class InstallmentPaymentFormTests(TestCase):
         self.loan.refresh_from_db()
 
         self.assertEqual(self.loan.status, Loan.Status.CLOSED)
+
+
+class CombinedPaymentViewTests(TestCase):
+    def setUp(self):
+        self.member = Member.objects.create(full_name="AKSHAY")
+        session = self.client.session
+        session[EDITOR_SESSION_KEY] = True
+        session.save()
+
+    @staticmethod
+    def next_month_start():
+        today = timezone.localdate()
+        return today.replace(
+            year=today.year + (today.month // 12),
+            month=1 if today.month == 12 else today.month + 1,
+            day=1,
+        )
+
+    def test_full_payment_auto_applies_saving_and_all_upcoming_installments(self):
+        next_month = self.next_month_start()
+        loan = Loan.objects.create(
+            member=self.member,
+            principal_amount=Decimal("6000.00"),
+            interest_rate_percent=Decimal("0.00"),
+            interest_amount=Decimal("0.00"),
+            net_disbursed_amount=Decimal("6000.00"),
+            issued_on=date(next_month.year, next_month.month - 1 if next_month.month > 1 else 12, 1),
+            installment_count=2,
+            installment_amount=Decimal("3000.00"),
+        )
+        Installment.objects.create(
+            loan=loan,
+            installment_number=1,
+            due_date=next_month,
+            amount_due=Decimal("3000.00"),
+            status=Installment.Status.PENDING,
+        )
+        Installment.objects.create(
+            loan=loan,
+            installment_number=2,
+            due_date=date(next_month.year, next_month.month, 28),
+            amount_due=Decimal("3000.00"),
+            status=Installment.Status.PENDING,
+        )
+
+        response = self.client.post(
+            "/payments/new/",
+            data={
+                "member": self.member.id,
+                "amount_paid": "7000.00",
+                "paid_on": timezone.localdate().isoformat(),
+                "notes": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        contribution = MonthlyContribution.objects.get(member=self.member, month=next_month)
+        self.assertEqual(contribution.amount_paid, Decimal("1000.00"))
+        self.assertEqual(contribution.status, MonthlyContribution.Status.PAID)
+        self.assertEqual(
+            Installment.objects.filter(loan=loan, status=Installment.Status.PAID).count(),
+            2,
+        )
+
+    def test_partial_payment_requires_allocation_target(self):
+        next_month = self.next_month_start()
+        loan = Loan.objects.create(
+            member=self.member,
+            principal_amount=Decimal("1000.00"),
+            interest_rate_percent=Decimal("0.00"),
+            interest_amount=Decimal("0.00"),
+            net_disbursed_amount=Decimal("1000.00"),
+            issued_on=timezone.localdate(),
+            installment_count=1,
+            installment_amount=Decimal("1000.00"),
+        )
+        Installment.objects.create(
+            loan=loan,
+            installment_number=1,
+            due_date=next_month,
+            amount_due=Decimal("1000.00"),
+            status=Installment.Status.PENDING,
+        )
+
+        response = self.client.post(
+            "/payments/new/",
+            data={
+                "member": self.member.id,
+                "amount_paid": "500.00",
+                "paid_on": timezone.localdate().isoformat(),
+                "notes": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Select whether it is for saving or a loan installment")
+
+    def test_partial_payment_can_be_applied_to_saving(self):
+        next_month = self.next_month_start()
+
+        response = self.client.post(
+            "/payments/new/",
+            data={
+                "member": self.member.id,
+                "amount_paid": "500.00",
+                "paid_on": timezone.localdate().isoformat(),
+                "allocation_target": "saving",
+                "notes": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        contribution = MonthlyContribution.objects.get(member=self.member, month=next_month)
+        self.assertEqual(contribution.amount_paid, Decimal("500.00"))
+        self.assertEqual(contribution.status, MonthlyContribution.Status.PARTIAL)
 
 
 class ActiveLoansReportTests(TestCase):
@@ -619,11 +734,36 @@ class EditorCrudViewsTests(TestCase):
         self.assertEqual(response.context["active_member_count"], 20)
         self.assertEqual(response.context["settlement_share"], Decimal("60.00"))
 
-        post_response = self.client.post(f"/members/{self.member.id}/remove/")
+        post_response = self.client.post(
+            f"/members/{self.member.id}/remove/",
+            data={
+                "payout_amount": "60.00",
+                "payout_date": "2026-04-07",
+                "notes": "",
+            },
+        )
 
         self.assertEqual(post_response.status_code, 302)
         self.member.refresh_from_db()
         self.assertFalse(self.member.is_active)
+
+    def test_member_remove_records_actual_payout_as_negative_adjustment(self):
+        response = self.client.post(
+            f"/members/{self.member.id}/remove/",
+            data={
+                "payout_amount": "250.00",
+                "payout_date": "2026-04-07",
+                "notes": "paid in cash",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.member.refresh_from_db()
+        self.assertFalse(self.member.is_active)
+        adjustment = FundAdjustment.objects.latest("id")
+        self.assertEqual(adjustment.adjustment_date, date(2026, 4, 7))
+        self.assertEqual(adjustment.amount, Decimal("-250.00"))
+        self.assertIn("paid in cash", adjustment.notes)
 
 
 class SeedMemberTests(TestCase):

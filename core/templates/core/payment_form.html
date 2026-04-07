@@ -1,0 +1,66 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+<h1 class="page-title">{{ page_title|default:"Record Payment" }}</h1>
+<div class="grid two">
+    <div class="card">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.member.label_tag }}
+            {{ form.member }}
+            {% if form.member.errors %}<div class="msg">{{ form.member.errors|join:", " }}</div>{% endif %}
+
+            {{ form.amount_paid.label_tag }}
+            {{ form.amount_paid }}
+            {% if form.amount_paid.errors %}<div class="msg">{{ form.amount_paid.errors|join:", " }}</div>{% endif %}
+
+            {{ form.paid_on.label_tag }}
+            {{ form.paid_on }}
+            {% if form.paid_on.errors %}<div class="msg">{{ form.paid_on.errors|join:", " }}</div>{% endif %}
+
+            {% if show_allocation %}
+            {{ form.allocation_target.label_tag }}
+            {{ form.allocation_target }}
+            {% if form.allocation_target.errors %}<div class="msg">{{ form.allocation_target.errors|join:", " }}</div>{% endif %}
+            {% endif %}
+
+            {{ form.notes.label_tag }}
+            {{ form.notes }}
+            {% if form.notes.errors %}<div class="msg">{{ form.notes.errors|join:", " }}</div>{% endif %}
+
+            {% if form.non_field_errors %}<div class="msg">{{ form.non_field_errors|join:", " }}</div>{% endif %}
+
+            <button type="submit">{{ submit_label|default:"Save Payment" }}</button>
+        </form>
+    </div>
+    <div class="card">
+        <h2 class="section-title">How It Works</h2>
+        <p>If the payment matches the full upcoming total, the app saves the saving and all next-month loan installments automatically.</p>
+        <p>If the payment is less than the full total, the app asks whether that payment is for saving or a specific loan installment.</p>
+        {% if payment_targets %}
+        <h2 class="section-title" style="margin-top: 18px;">Upcoming Due</h2>
+        <p><strong>Total:</strong> ${{ upcoming_total }}</p>
+        <div class="table-wrap responsive-stack">
+            <table class="responsive-table">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Details</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in payment_targets %}
+                    <tr>
+                        <td data-label="Type">{{ item.kind|title }}</td>
+                        <td data-label="Details">{{ item.label }}</td>
+                        <td data-label="Amount">${{ item.remaining }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

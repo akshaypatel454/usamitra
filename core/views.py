@@ -7,7 +7,15 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from .auth_utils import EDITOR_SESSION_KEY, editor_required, password_matches
-from .forms import ContributionForm, InstallmentPaymentForm, InterestPayoutAllForm, LoanForm, MemberForm
+from .forms import (
+    CombinedPaymentForm,
+    ContributionForm,
+    InstallmentPaymentForm,
+    InterestPayoutAllForm,
+    LoanForm,
+    MemberRemovalForm,
+    MemberForm,
+)
 from .models import FundAdjustment, Installment, Loan, Member, MemberInterestPayout, MonthlyContribution
 
 
@@ -308,12 +316,7 @@ def member_edit(request, member_id):
 
 @editor_required
 def contribution_create(request):
-    form = ContributionForm(request.POST or None)
-    if request.method == "POST" and form.is_valid():
-        contribution = form.save()
-        messages.success(request, f"Saved contribution for {contribution.member.full_name}.")
-        return redirect("contribution-create")
-    return render(request, "core/contribution_form.html", {"form": form})
+    return redirect("payment-create")
 
 
 @editor_required
@@ -398,15 +401,63 @@ def loan_delete(request, loan_id):
 
 @editor_required
 def installment_payment_create(request):
-    form = InstallmentPaymentForm(request.POST or None)
-    if request.method == "POST" and form.is_valid():
-        installment = form.save()
-        messages.success(
-            request,
-            f"Saved installment payment for {installment.loan.member.full_name}.",
-        )
-        return redirect("installment-payment-create")
-    return render(request, "core/installment_payment_form.html", {"form": form})
+    return redirect("payment-create")
+
+
+@editor_required
+def payment_create(request):
+    upcoming_total = None
+    payment_targets = None
+    show_allocation = False
+    form = CombinedPaymentForm()
+    if request.method == "POST":
+        member = None
+        try:
+            member_id = int(request.POST.get("member", ""))
+            member = Member.objects.get(pk=member_id, is_active=True)
+        except (Member.DoesNotExist, ValueError, TypeError):
+            member = None
+
+        if member is not None:
+            seed_form = CombinedPaymentForm(
+                data={
+                    "member": member.pk,
+                    "amount_paid": request.POST.get("amount_paid"),
+                    "paid_on": request.POST.get("paid_on"),
+                    "notes": request.POST.get("notes", ""),
+                    "allocation_target": request.POST.get("allocation_target", ""),
+                }
+            )
+            seed_form.cleaned_data = {"member": member}
+            payment_targets = seed_form.get_payment_targets()
+            upcoming_total = sum((item["remaining"] for item in payment_targets), Decimal("0.00"))
+            form = CombinedPaymentForm(request.POST, payment_targets=payment_targets)
+            try:
+                entered_amount = Decimal(request.POST.get("amount_paid", "0"))
+            except Exception:
+                entered_amount = Decimal("0.00")
+            show_allocation = entered_amount > 0 and entered_amount < upcoming_total
+        else:
+            form = CombinedPaymentForm(request.POST)
+
+        if form.is_valid():
+            form.save()
+            member_name = form.cleaned_data["member"].full_name
+            messages.success(request, f"Saved payment for {member_name}.")
+            return redirect("payment-create")
+
+    return render(
+        request,
+        "core/payment_form.html",
+        {
+            "form": form,
+            "payment_targets": payment_targets,
+            "upcoming_total": upcoming_total,
+            "show_allocation": show_allocation,
+            "page_title": "Record Payment",
+            "submit_label": "Save Payment",
+        },
+    )
 
 
 @editor_required
@@ -470,18 +521,37 @@ def member_remove(request, member_id):
         if active_member_count
         else Decimal("0.00")
     )
+    form = MemberRemovalForm(
+        request.POST or None,
+        initial={
+            "payout_amount": settlement_share,
+            "payout_date": timezone.localdate(),
+        },
+    )
 
-    if request.method == "POST":
+    if request.method == "POST" and form.is_valid():
+        payout_amount = form.cleaned_data["payout_amount"]
+        payout_date = form.cleaned_data["payout_date"]
+        payout_notes = form.cleaned_data["notes"]
+        if payout_amount > 0:
+            FundAdjustment.objects.create(
+                adjustment_date=payout_date,
+                amount=-payout_amount,
+                notes=(
+                    f"Member removal payout for {member.full_name}. "
+                    f"{payout_notes}".strip()
+                ),
+            )
         member.is_active = False
         if member.notes:
             member.notes += "\n"
         member.notes += (
-            f"Removed from active members on {timezone.localdate()} with exit share {settlement_share}."
+            f"Removed from active members on {payout_date} with exit share {settlement_share} and payout {payout_amount}."
         )
         member.save(update_fields=["is_active", "notes"])
         messages.success(
             request,
-            f"Marked {member.full_name} inactive. Exit share: ${settlement_share}.",
+            f"Marked {member.full_name} inactive. Payout recorded: ${payout_amount}.",
         )
         return redirect("member-detail", member_id=member.id)
 
@@ -495,6 +565,7 @@ def member_remove(request, member_id):
             "outstanding_installments_total": fund_totals["outstanding_installments_total"],
             "exit_pool_total": exit_pool_total,
             "settlement_share": settlement_share,
+            "form": form,
         },
     )
 

@@ -24,6 +24,7 @@ from .views import (
     member_report,
     monthly_summary_report,
     overdue_report,
+    payment_create,
     skip_next_savings_installments,
 )
 
@@ -34,6 +35,7 @@ urlpatterns = [
     path("editor-lock/", editor_lock, name="editor-lock"),
     path("members/new/", member_create, name="member-create"),
     path("members/<int:member_id>/edit/", member_edit, name="member-edit"),
+    path("payments/new/", payment_create, name="payment-create"),
     path("contributions/new/", contribution_create, name="contribution-create"),
     path("contributions/<int:contribution_id>/edit/", contribution_edit, name="contribution-edit"),
     path("contributions/<int:contribution_id>/delete/", contribution_delete, name="contribution-delete"),

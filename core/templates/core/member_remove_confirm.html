@@ -28,11 +28,24 @@
         </div>
     </div>
     <div class="card">
-        <h2>What this does</h2>
+        <h2 class="section-title">What this does</h2>
         <p>This keeps all history but removes the member from active counts and future monthly contribution expectations.</p>
         <p>The settlement share is calculated as available cash plus outstanding installments, divided by the active member count.</p>
+        <p>You can enter the actual amount paid to the member. That payout is recorded as cash going out on the selected date.</p>
         <form method="post">
             {% csrf_token %}
+            {{ form.payout_amount.label_tag }}
+            {{ form.payout_amount }}
+            {% if form.payout_amount.errors %}<div class="msg">{{ form.payout_amount.errors|join:", " }}</div>{% endif %}
+
+            {{ form.payout_date.label_tag }}
+            {{ form.payout_date }}
+            {% if form.payout_date.errors %}<div class="msg">{{ form.payout_date.errors|join:", " }}</div>{% endif %}
+
+            {{ form.notes.label_tag }}
+            {{ form.notes }}
+            {% if form.notes.errors %}<div class="msg">{{ form.notes.errors|join:", " }}</div>{% endif %}
+
             <button type="submit">Confirm Remove Member</button>
         </form>
         <p><a href="/members/{{ member.id }}/">Cancel</a></p>
