@@ -115,7 +115,10 @@
                                 <input type="hidden" name="notes" value="Quick full payment from dashboard.">
                                 <button type="submit">Pay Full</button>
                             </form>
-                            <a href="/payments/new/?member={{ member.id }}">Partial</a>
+                            <a
+                                href="/payments/new/?member={{ member.id }}"
+                                style="display: inline-flex; align-items: center; justify-content: center; padding: 10px 12px; border-radius: 10px; background: var(--ink); color: white; text-decoration: none;"
+                            >Partial</a>
                         </div>
                         {% endif %}
                     </td>
