@@ -103,7 +103,22 @@
                     <td data-label="Loan installments">${{ member.next_month_installment_total }}</td>
                     <td data-label="Month">{{ next_month|date:"M Y" }}</td>
                     <td data-label="Saving">${{ member.savings_due }}</td>
-                    <td data-label="Total due"><strong>${{ member.total_upcoming_due }}</strong></td>
+                    <td data-label="Total due">
+                        <strong>${{ member.total_upcoming_due }}</strong>
+                        {% if can_edit %}
+                        <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
+                            <form method="post" action="/payments/new/" style="margin: 0;">
+                                {% csrf_token %}
+                                <input type="hidden" name="member" value="{{ member.id }}">
+                                <input type="hidden" name="amount_paid" value="{{ member.total_upcoming_due }}">
+                                <input type="hidden" name="paid_on" value="{% now 'Y-m-d' %}">
+                                <input type="hidden" name="notes" value="Quick full payment from dashboard.">
+                                <button type="submit">Pay Full</button>
+                            </form>
+                            <a href="/payments/new/?member={{ member.id }}">Partial</a>
+                        </div>
+                        {% endif %}
+                    </td>
                 </tr>
                 {% empty %}
                 <tr><td colspan="5">No matching members found.</td></tr>

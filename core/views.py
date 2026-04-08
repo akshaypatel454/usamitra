@@ -215,7 +215,7 @@ def dashboard(request):
     this_month_collected = contribution_paid_this_month + installment_paid_this_month
     available_cash_now = fund_totals["available_cash_now"]
     total_cash = fund_totals["total_cash"]
-    member_upcoming_dues = Member.objects.filter(is_active=True).annotate(
+    base_member_upcoming_dues = Member.objects.filter(is_active=True).annotate(
         next_month_installment_total=Coalesce(
             Subquery(outstanding_due_total_subquery(next_month, month_after_next)),
             Value(Decimal("0.00")),
@@ -234,9 +234,10 @@ def dashboard(request):
         )
     ).order_by("full_name")
     due_search = request.GET.get("due_search", "").strip()
+    member_upcoming_dues = base_member_upcoming_dues
     if due_search:
         member_upcoming_dues = member_upcoming_dues.filter(full_name__icontains=due_search)
-    next_month_savings_total = sum((member.savings_due for member in member_upcoming_dues), Decimal("0.00"))
+    next_month_savings_total = sum((member.savings_due for member in base_member_upcoming_dues), Decimal("0.00"))
     next_month_total_cash = available_cash_now + next_month_savings_total + next_month_installment_total
 
     context = {
@@ -433,7 +434,20 @@ def payment_create(request):
     upcoming_total = None
     payment_targets = None
     show_allocation = False
-    form = CombinedPaymentForm()
+    initial = {}
+    if request.method == "GET" and request.GET.get("member"):
+        initial["member"] = request.GET.get("member")
+    form = CombinedPaymentForm(initial=initial)
+    if request.method == "GET" and initial.get("member"):
+        try:
+            member = Member.objects.get(pk=int(initial["member"]), is_active=True)
+            seed_form = CombinedPaymentForm(initial={"member": member.pk})
+            seed_form.cleaned_data = {"member": member}
+            payment_targets = seed_form.get_payment_targets()
+            upcoming_total = sum((item["remaining"] for item in payment_targets), Decimal("0.00"))
+            form = CombinedPaymentForm(initial={"member": member.pk}, payment_targets=payment_targets)
+        except (Member.DoesNotExist, ValueError, TypeError):
+            pass
     if request.method == "POST":
         member = None
         try:
@@ -470,6 +484,37 @@ def payment_create(request):
             messages.success(request, f"Saved payment for {member_name}.")
             return redirect("payment-create")
 
+    next_month = CombinedPaymentForm.next_month_start()
+    month_after_next = next_month.replace(
+        year=next_month.year + (next_month.month // 12),
+        month=1 if next_month.month == 12 else next_month.month + 1,
+        day=1,
+    )
+    next_month_savings_due_subquery = MonthlyContribution.objects.filter(
+        member=OuterRef("pk"),
+        month=next_month,
+    ).values("amount_due")[:1]
+    upcoming_member_summaries = Member.objects.filter(is_active=True).annotate(
+        next_month_installment_total=Coalesce(
+            Subquery(outstanding_due_total_subquery(next_month, month_after_next)),
+            Value(Decimal("0.00")),
+        ),
+        savings_due=Coalesce(
+            Subquery(next_month_savings_due_subquery),
+            F("monthly_contribution_amount"),
+        ),
+    ).annotate(
+        total_upcoming_due=Coalesce(
+            Subquery(next_month_savings_due_subquery),
+            F("monthly_contribution_amount"),
+        ) + Coalesce(
+            Subquery(outstanding_due_total_subquery(next_month, month_after_next)),
+            Value(Decimal("0.00")),
+        )
+    ).filter(
+        total_upcoming_due__gt=0
+    ).order_by("full_name")
+
     return render(
         request,
         "core/payment_form.html",
@@ -478,9 +523,8 @@ def payment_create(request):
             "payment_targets": payment_targets,
             "upcoming_total": upcoming_total,
             "show_allocation": show_allocation,
-            "payment_member_summaries": member_with_totals_queryset().filter(
-                Q(savings_payment_count__gt=0) | Q(loan_payment_count__gt=0)
-            ).order_by("full_name"),
+            "upcoming_member_summaries": upcoming_member_summaries,
+            "next_month": next_month,
             "page_title": "Record Payment",
             "submit_label": "Save Payment",
         },
@@ -657,10 +701,30 @@ def skip_next_savings_installments(request):
 
 
 def member_report(request):
+    next_month = CombinedPaymentForm.next_month_start()
+    month_after_next = next_month.replace(
+        year=next_month.year + (next_month.month // 12),
+        month=1 if next_month.month == 12 else next_month.month + 1,
+        day=1,
+    )
+    next_month_savings_due_subquery = MonthlyContribution.objects.filter(
+        member=OuterRef("pk"),
+        month=next_month,
+    ).values("amount_due")[:1]
     members = member_with_totals_queryset().annotate(
         member_balance=F("total_principal_loaned") - F("total_installment_paid") - F("total_contributed")
+    ).annotate(
+        outstanding_principal=F("total_principal_loaned") - F("total_installment_paid"),
+        next_month_installment_total=Coalesce(
+            Subquery(outstanding_due_total_subquery(next_month, month_after_next)),
+            Value(Decimal("0.00")),
+        ),
+        savings_due=Coalesce(
+            Subquery(next_month_savings_due_subquery),
+            F("monthly_contribution_amount"),
+        ),
     ).order_by("full_name")
-    return render(request, "core/member_report.html", {"members": members})
+    return render(request, "core/member_report.html", {"members": members, "next_month": next_month})
 
 
 def member_detail(request, member_id):
@@ -764,7 +828,19 @@ def monthly_summary_report(request):
         row["label"] = month_label(row["month"])
         rows.append(row)
 
-    return render(request, "core/monthly_summary_report.html", {"rows": rows})
+    month_options = [row["month"] for row in rows]
+    selected_month = request.GET.get("month", "").strip()
+    if selected_month:
+        rows = [row for row in rows if row["month"].strftime("%Y-%m") == selected_month]
+    return render(
+        request,
+        "core/monthly_summary_report.html",
+        {
+            "rows": rows,
+            "month_options": month_options,
+            "selected_month": selected_month,
+        },
+    )
 
 
 def active_loans_report(request):
@@ -772,6 +848,9 @@ def active_loans_report(request):
     next_due_installments = Installment.objects.filter(
         loan=OuterRef("pk")
     ).exclude(status=Installment.Status.PAID).order_by("due_date", "installment_number")
+    last_installment_dates = Installment.objects.filter(
+        loan=OuterRef("pk")
+    ).order_by("-due_date").values("due_date")[:1]
     loans = Loan.objects.filter(
         status__in=[Loan.Status.ACTIVE, Loan.Status.OVERDUE]
     ).select_related("member").annotate(
@@ -784,6 +863,7 @@ def active_loans_report(request):
         next_due_amount=Subquery(next_due_installments.values("amount_due")[:1]),
         next_due_installment_number=Subquery(next_due_installments.values("installment_number")[:1]),
         next_due_status=Subquery(next_due_installments.values("status")[:1]),
+        end_date=Subquery(last_installment_dates),
     ).order_by("next_due_date", "member__full_name", "-issued_on")
     return render(request, "core/active_loans_report.html", {"loans": loans})
 

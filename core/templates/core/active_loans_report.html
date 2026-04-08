@@ -8,35 +8,27 @@
         <thead>
             <tr>
                 <th>Member</th>
-                <th>Issued</th>
-                <th>Principal</th>
-                <th>Interest</th>
-                <th>Cash Given</th>
-                <th>Paid Back</th>
-                <th>Remaining Principal</th>
+                <th>Loan Amount</th>
+                <th>Issued On</th>
+                <th>Balance Left</th>
+                <th>End Date</th>
+                <th>Next Due</th>
                 <th>Status</th>
-                <th>Next Installment</th>
-                <th>Next Due Date</th>
-                <th>Next Due Amount</th>
             </tr>
         </thead>
         <tbody>
             {% for loan in loans %}
             <tr>
                 <td data-label="Member"><span class="{% if loan.member_id in overdue_member_ids %}member-overdue{% endif %}">{{ loan.member.full_name }}</span></td>
-                <td data-label="Issued">{{ loan.issued_on }}</td>
-                <td data-label="Principal">${{ loan.principal_amount }}</td>
-                <td data-label="Interest">${{ loan.interest_amount }}</td>
-                <td data-label="Cash given">${{ loan.net_disbursed_amount }}</td>
-                <td data-label="Paid back">${{ loan.total_installments_paid }}</td>
-                <td data-label="Remaining principal">${{ loan.remaining_principal }}</td>
+                <td data-label="Loan amount">${{ loan.principal_amount }}</td>
+                <td data-label="Issued on">{{ loan.issued_on }}</td>
+                <td data-label="Balance left">${{ loan.remaining_principal }}</td>
+                <td data-label="End date">{{ loan.end_date|default:"-" }}</td>
+                <td data-label="Next due">{% if loan.next_due_date %}{{ loan.next_due_date }} | ${{ loan.next_due_amount }}{% else %}-{% endif %}</td>
                 <td data-label="Status"><span class="pill {% if loan.status == 'overdue' %}warn{% elif loan.status == 'closed' %}ok{% endif %}">{{ loan.get_status_display }}</span></td>
-                <td data-label="Next installment">{% if loan.next_due_installment_number %}#{{ loan.next_due_installment_number }}{% else %}-{% endif %}</td>
-                <td data-label="Next due date">{{ loan.next_due_date|default:"-" }}</td>
-                <td data-label="Next due amount">{% if loan.next_due_amount %}${{ loan.next_due_amount }}{% else %}-{% endif %}</td>
             </tr>
             {% empty %}
-            <tr><td colspan="11">No active loans.</td></tr>
+            <tr><td colspan="6">No active loans.</td></tr>
             {% endfor %}
         </tbody>
     </table>

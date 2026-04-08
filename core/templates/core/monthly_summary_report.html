@@ -2,6 +2,20 @@
 
 {% block content %}
 <h1 class="page-title">Monthly Summary</h1>
+<div class="card" style="margin-bottom: 18px;">
+    <form method="get">
+        <label for="month">Select Month</label>
+        <div class="grid" style="grid-template-columns: minmax(0, 1fr) auto; gap: 8px;">
+            <select id="month" name="month">
+                <option value="">All Months</option>
+                {% for month in month_options %}
+                <option value="{{ month|date:'Y-m' }}" {% if selected_month == month|date:'Y-m' %}selected{% endif %}>{{ month|date:"M Y" }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit">View</button>
+        </div>
+    </form>
+</div>
 <div class="card">
     <div class="table-wrap responsive-stack">
     <table class="responsive-table">

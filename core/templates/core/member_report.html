@@ -8,29 +8,25 @@
         <thead>
             <tr>
                 <th>Member</th>
-                <th>Monthly Amount</th>
-                <th>Total Contributed</th>
-                <th>Principal Loaned</th>
-                <th>Interest Taken</th>
-                <th>Cash Given</th>
-                <th>Total Installments Paid</th>
-                <th>Balance</th>
+                <th>Monthly Saving</th>
+                <th>Total Saving Paid</th>
+                <th>Outstanding Loan</th>
+                <th>Next Month Due</th>
+                <th>Details</th>
             </tr>
         </thead>
         <tbody>
             {% for member in members %}
             <tr>
                 <td data-label="Member"><a class="{% if member.id in overdue_member_ids %}member-overdue{% endif %}" href="/members/{{ member.id }}/">{{ member.full_name }}</a></td>
-                <td data-label="Monthly amount">${{ member.monthly_contribution_amount }}</td>
-                <td data-label="Total contributed">${{ member.total_contributed|default:"0" }}</td>
-                <td data-label="Principal loaned">${{ member.total_principal_loaned|default:"0" }}</td>
-                <td data-label="Interest taken">${{ member.total_interest_collected|default:"0" }}</td>
-                <td data-label="Cash given">${{ member.total_cash_received|default:"0" }}</td>
-                <td data-label="Installments paid">${{ member.total_installment_paid|default:"0" }}</td>
-                <td data-label="Balance">${{ member.member_balance|default:"0" }}</td>
+                <td data-label="Monthly saving">${{ member.monthly_contribution_amount }}</td>
+                <td data-label="Total saving paid">${{ member.total_contributed|default:"0" }}</td>
+                <td data-label="Outstanding loan">${{ member.outstanding_principal|default:"0" }}</td>
+                <td data-label="Next month due">${{ member.savings_due|add:member.next_month_installment_total }}</td>
+                <td data-label="Details"><a href="/members/{{ member.id }}/">Open</a></td>
             </tr>
             {% empty %}
-            <tr><td colspan="8">No members yet.</td></tr>
+            <tr><td colspan="5">No members yet.</td></tr>
             {% endfor %}
         </tbody>
     </table>
