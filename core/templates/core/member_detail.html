@@ -70,100 +70,112 @@
     </div>
 </div>
 
-<div class="grid two" style="margin-bottom: 18px;">
-    <div class="card">
-        <h2 class="section-title">Contributions</h2>
+<details class="card-toggle" open>
+    <summary class="toggle-summary">
+        <span>Saving Summary As Of {{ contributions.first.month|date:"M Y"|default:"Today" }}</span>
+        <span class="inline-stats">
+            <span>Total Paid: ${{ member.total_contributed }}</span>
+            <span>Months Recorded: {{ contributions|length }}</span>
+        </span>
+    </summary>
+    <div class="toggle-content">
         <div class="table-wrap responsive-stack">
-        <table class="responsive-table">
-            <thead>
-                <tr>
-                    <th>Month</th>
-                    <th>Due</th>
-                    <th>Paid</th>
-                    <th>Status</th>
-                    {% if can_edit %}<th>Actions</th>{% endif %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for contribution in contributions %}
-                <tr>
-                    <td data-label="Month">{{ contribution.month|date:"M Y" }}</td>
-                    <td data-label="Due">${{ contribution.amount_due }}</td>
-                    <td data-label="Paid">${{ contribution.amount_paid }}</td>
-                    <td data-label="Status"><span class="pill {% if contribution.status == 'paid' %}ok{% elif contribution.status == 'partial' %}warn{% endif %}">{{ contribution.get_status_display }}</span></td>
-                    {% if can_edit %}<td data-label="Actions"><a href="/contributions/{{ contribution.id }}/edit/">Edit</a> | <a href="/contributions/{{ contribution.id }}/delete/">Delete</a></td>{% endif %}
-                </tr>
-                {% empty %}
-                <tr><td colspan="{% if can_edit %}5{% else %}4{% endif %}">No contributions recorded.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+            <table class="responsive-table">
+                <thead>
+                    <tr>
+                        <th>Month</th>
+                        <th>Due</th>
+                        <th>Paid</th>
+                        <th>Status</th>
+                        {% if can_edit %}<th>Actions</th>{% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contribution in contributions %}
+                    <tr>
+                        <td data-label="Month">{{ contribution.month|date:"M Y" }}</td>
+                        <td data-label="Due">${{ contribution.amount_due }}</td>
+                        <td data-label="Paid">${{ contribution.amount_paid }}</td>
+                        <td data-label="Status"><span class="pill {% if contribution.status == 'paid' %}ok{% elif contribution.status == 'partial' %}warn{% endif %}">{{ contribution.get_status_display }}</span></td>
+                        {% if can_edit %}<td data-label="Actions"><a href="/contributions/{{ contribution.id }}/edit/">Edit</a> | <a href="/contributions/{{ contribution.id }}/delete/">Delete</a></td>{% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="{% if can_edit %}5{% else %}4{% endif %}">No contributions recorded.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
-    <div class="card">
-        <h2 class="section-title">Loans</h2>
-        <div class="table-wrap responsive-stack">
-        <table class="responsive-table">
-            <thead>
-                <tr>
-                    <th>Issued</th>
-                    <th>Principal</th>
-                    <th>Interest</th>
-                    <th>Cash Given</th>
-                    <th>Status</th>
-                    {% if can_edit %}<th>Actions</th>{% endif %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for loan in loans %}
-                <tr>
-                    <td data-label="Issued">{{ loan.issued_on }}</td>
-                    <td data-label="Principal">${{ loan.principal_amount }}</td>
-                    <td data-label="Interest">${{ loan.interest_amount }}</td>
-                    <td data-label="Cash given">${{ loan.net_disbursed_amount }}</td>
-                    <td data-label="Status"><span class="pill {% if loan.status == 'closed' %}ok{% elif loan.status == 'overdue' %}warn{% endif %}">{{ loan.get_status_display }}</span></td>
-                    {% if can_edit %}<td data-label="Actions"><a href="/loans/{{ loan.id }}/edit/">Edit</a> | <a href="/loans/{{ loan.id }}/delete/">Delete</a></td>{% endif %}
-                </tr>
-                {% empty %}
-                <tr><td colspan="{% if can_edit %}6{% else %}5{% endif %}">No loans recorded.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        </div>
-    </div>
-</div>
+</details>
 
-<div class="card">
-    <h2 class="section-title">Installment History</h2>
-    <div class="table-wrap responsive-stack">
-    <table class="responsive-table">
-        <thead>
-            <tr>
-                <th>Due Date</th>
-                <th>Loan Issued</th>
-                <th>Installment</th>
-                <th>Amount Due</th>
-                <th>Amount Paid</th>
-                <th>Status</th>
-                {% if can_edit %}<th>Actions</th>{% endif %}
-            </tr>
-        </thead>
-        <tbody>
-            {% for installment in installments %}
-            <tr>
-                <td data-label="Due date">{{ installment.due_date }}</td>
-                <td data-label="Loan issued">{{ installment.loan.issued_on }}</td>
-                <td data-label="Installment">#{{ installment.installment_number }}</td>
-                <td data-label="Amount due">${{ installment.amount_due }}</td>
-                <td data-label="Amount paid">${{ installment.amount_paid }}</td>
-                <td data-label="Status"><span class="pill {% if installment.status == 'paid' %}ok{% elif installment.status == 'partial' or installment.status == 'pending' %}warn{% endif %}">{{ installment.get_status_display }}</span></td>
-                {% if can_edit %}<td data-label="Actions"><a href="/installments/{{ installment.id }}/edit/">Edit</a> | <a href="/installments/{{ installment.id }}/delete/">Delete</a></td>{% endif %}
-            </tr>
-            {% empty %}
-            <tr><td colspan="{% if can_edit %}7{% else %}6{% endif %}">No installments recorded.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+{% for loan in loans %}
+<details class="card-toggle" {% if forloop.first %}open{% endif %}>
+    <summary class="toggle-summary">
+        <span>Loan ${{ loan.principal_amount }} issued {{ loan.issued_on }}</span>
+        <span class="inline-stats">
+            <span>Cash Given: ${{ loan.net_disbursed_amount }}</span>
+            <span>Status: {{ loan.get_status_display }}</span>
+        </span>
+    </summary>
+    <div class="toggle-content">
+        <div class="table-wrap responsive-stack" style="margin-bottom: 14px;">
+            <table class="responsive-table">
+                <tbody>
+                    <tr>
+                        <td data-label="Principal">${{ loan.principal_amount }}</td>
+                    </tr>
+                    <tr>
+                        <td data-label="Interest">${{ loan.interest_amount }}</td>
+                    </tr>
+                    <tr>
+                        <td data-label="Cash given">${{ loan.net_disbursed_amount }}</td>
+                    </tr>
+                    <tr>
+                        <td data-label="Status"><span class="pill {% if loan.status == 'closed' %}ok{% elif loan.status == 'overdue' %}warn{% endif %}">{{ loan.get_status_display }}</span></td>
+                    </tr>
+                    {% if can_edit %}
+                    <tr>
+                        <td data-label="Actions"><a href="/loans/{{ loan.id }}/edit/">Edit</a> | <a href="/loans/{{ loan.id }}/delete/">Delete</a></td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        <h2 class="section-title">Installments</h2>
+        <div class="table-wrap responsive-stack">
+            <table class="responsive-table">
+                <thead>
+                    <tr>
+                        <th>Due Date</th>
+                        <th>Installment</th>
+                        <th>Amount Due</th>
+                        <th>Amount Paid</th>
+                        <th>Status</th>
+                        {% if can_edit %}<th>Actions</th>{% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for installment in loan.installments.all %}
+                    <tr>
+                        <td data-label="Due date">{{ installment.due_date }}</td>
+                        <td data-label="Installment">#{{ installment.installment_number }}</td>
+                        <td data-label="Amount due">${{ installment.amount_due }}</td>
+                        <td data-label="Amount paid">${{ installment.amount_paid }}</td>
+                        <td data-label="Status"><span class="pill {% if installment.status == 'paid' %}ok{% elif installment.status == 'partial' or installment.status == 'pending' %}warn{% endif %}">{{ installment.get_status_display }}</span></td>
+                        {% if can_edit %}<td data-label="Actions"><a href="/installments/{{ installment.id }}/edit/">Edit</a> | <a href="/installments/{{ installment.id }}/delete/">Delete</a></td>{% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="{% if can_edit %}6{% else %}5{% endif %}">No installments recorded.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
+</details>
+{% empty %}
+<div class="card">
+    <h2 class="section-title">Loans</h2>
+    <p>No loans recorded.</p>
 </div>
+{% endfor %}
 {% endblock %}
