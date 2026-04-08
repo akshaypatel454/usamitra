@@ -37,38 +37,42 @@
     </div>
 </div>
 
-<div class="grid two">
+<div class="dashboard-grid">
     <div class="card">
         <h2 class="section-title">Cash Summary</h2>
-        <div class="table-wrap responsive-stack">
-        <table class="responsive-table">
-            <tbody>
-                <tr>
-                    <td data-label="Available cash now"><strong>${{ available_cash_now }}</strong></td>
-                </tr>
-                <tr>
-                    <td data-label="This month savings">${{ contribution_paid_this_month }}</td>
-                </tr>
-                <tr>
-                    <td data-label="This month installments">${{ installment_paid_this_month }}</td>
-                </tr>
-                <tr>
-                    <td data-label="Next month installments">${{ next_month_installment_total }}</td>
-                </tr>
-                <tr>
-                    <td data-label="Next month savings">${{ next_month_savings_total }}</td>
-                </tr>
-                <tr>
-                    <td data-label="This month loans given">${{ cash_given_this_month }}</td>
-                </tr>
-                <tr>
-                    <td data-label="Total interest given out">${{ interest_paid_out_total }}</td>
-                </tr>
-                <tr>
-                    <td data-label="Next month total cash"><strong>${{ next_month_total_cash }}</strong></td>
-                </tr>
-            </tbody>
-        </table>
+        <div class="summary-grid">
+            <div class="summary-item">
+                <div class="label">Available Cash Now</div>
+                <div class="value ok">${{ available_cash_now }}</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">This Month Savings</div>
+                <div class="value">${{ contribution_paid_this_month }}</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">This Month Installments</div>
+                <div class="value">${{ installment_paid_this_month }}</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">Next Month Installments</div>
+                <div class="value">${{ next_month_installment_total }}</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">Next Month Savings</div>
+                <div class="value">${{ next_month_savings_total }}</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">This Month Loans Given</div>
+                <div class="value">${{ cash_given_this_month }}</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">Interest Given Out</div>
+                <div class="value">${{ interest_paid_out_total }}</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">Next Month Total Cash</div>
+                <div class="value ok">${{ next_month_total_cash }}</div>
+            </div>
         </div>
     </div>
 

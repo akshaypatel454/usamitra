@@ -153,6 +153,28 @@
         .metric-grid.wide {
             grid-template-columns: repeat(8, minmax(0, 1fr));
         }
+        .dashboard-grid {
+            display: grid;
+            gap: 16px;
+            grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.35fr);
+        }
+        .summary-grid {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .summary-item {
+            padding: 14px;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: linear-gradient(180deg, #fffdf8 0%, #f7f1e7 100%);
+        }
+        .summary-item .label {
+            margin-bottom: 6px;
+        }
+        .summary-item .value {
+            font-size: 1.25rem;
+        }
         .messages {
             margin-bottom: 16px;
         }
@@ -193,10 +215,11 @@
             margin-bottom: 8px;
         }
         .value {
-            font-size: 1.7rem;
+            font-size: clamp(1.15rem, 1.6vw, 1.7rem);
             font-weight: 700;
             line-height: 1.1;
             white-space: nowrap;
+            letter-spacing: -0.03em;
         }
         .nowrap {
             white-space: nowrap;
@@ -308,6 +331,7 @@
                 margin-bottom: 12px;
             }
             .grid.two { grid-template-columns: 1fr; }
+            .dashboard-grid { grid-template-columns: 1fr; }
             .metric-grid,
             .metric-grid.wide {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -323,6 +347,12 @@
                 font-size: 1rem;
                 margin-bottom: 10px;
             }
+            .summary-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .summary-item .value {
+                font-size: 1.08rem;
+            }
             table {
                 min-width: 560px;
             }
@@ -330,6 +360,9 @@
         @media (max-width: 560px) {
             .metric-grid,
             .metric-grid.wide {
+                grid-template-columns: 1fr;
+            }
+            .summary-grid {
                 grid-template-columns: 1fr;
             }
             th, td {
